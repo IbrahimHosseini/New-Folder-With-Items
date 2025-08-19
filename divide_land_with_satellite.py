@@ -101,6 +101,7 @@ if not satellite_loaded:
 # Transform coordinates to Web Mercator for plotting
 transformer = Transformer.from_crs("EPSG:4326", "EPSG:3857", always_xy=True)
 
+# ... existing code ...
 # Plot the divided quarters with measurements
 for i, (poly, (area, perimeter)) in enumerate(zip(quarters, quarter_measurements)):
     x, y = poly.exterior.xy
@@ -108,10 +109,31 @@ for i, (poly, (area, perimeter)) in enumerate(zip(quarters, quarter_measurements
     x_transformed, y_transformed = transformer.transform(x, y)
     ax.fill(x_transformed, y_transformed, edgecolor='red', facecolor='none', linewidth=2, 
             label=f'Quarter {i+1}: {area:.0f} m², {perimeter:.0f} m')
+    
+    # Add area and perimeter text on each quarter
+    quarter_centroid = poly.centroid
+    quarter_centroid_transformed = transformer.transform(quarter_centroid.x, quarter_centroid.y)
+    
+    # Add area text
+    ax.text(quarter_centroid_transformed[0], quarter_centroid_transformed[1] + 50, 
+            f'Area: {area:.0f} m²\n({area/10000:.2f} ha)', 
+            ha='center', va='center', fontsize=10, fontweight='bold',
+            bbox=dict(boxstyle="round,pad=0.3", facecolor='white', alpha=0.8, edgecolor='red'))
+    
+    # Add perimeter text below
+    ax.text(quarter_centroid_transformed[0], quarter_centroid_transformed[1] - 50, 
+            f'Perimeter: {perimeter:.0f} m', 
+            ha='center', va='center', fontsize=9, fontweight='bold',
+            bbox=dict(boxstyle="round,pad=0.2", facecolor='white', alpha=0.8, edgecolor='blue'))
 
 # Mark the centroid
 centroid_transformed = transformer.transform(centroid.x, centroid.y)
 ax.plot(centroid_transformed[0], centroid_transformed[1], 'bo', markersize=8, label='Centroid')
+
+# Add total area and perimeter info on the image
+total_text = f'TOTAL AREA: {total_area:.0f} m² ({total_area/10000:.2f} ha)\nTOTAL PERIMETER: {total_perimeter:.0f} m'
+ax.text(0.02, 0.98, total_text, transform=ax.transAxes, fontsize=12, fontweight='bold',
+        verticalalignment='top', bbox=dict(boxstyle="round,pad=0.5", facecolor='yellow', alpha=0.9, edgecolor='black'))
 
 # Set map limits with transformed coordinates
 # Transform the four corner points individually
@@ -125,6 +147,7 @@ ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
 ax.set_title('Land Divided into Quarters - Satellite View\n' + 
              f'Total Area: {total_area:.0f} m² | Total Perimeter: {total_perimeter:.0f} m', 
              fontsize=14, fontweight='bold')
+
 
 # Save output
 ax.axis('off')
